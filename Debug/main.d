@@ -61,6 +61,10 @@ main.obj: /Applications/ti/ccs1250/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/incl
 main.obj: /Applications/ti/ccs1250/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/stdarg.h
 main.obj: ../HAL_I2C.h
 main.obj: ../MPU6050.h
+main.obj: /Applications/ti/ccs1250/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/stdlib.h
+main.obj: /Applications/ti/ccs1250/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/time.h
+main.obj: /Applications/ti/ccs1250/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/abi_prefix.h
+main.obj: /Applications/ti/ccs1250/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/xlocale/_time.h
 
 ../main.c:
 
@@ -183,4 +187,12 @@ main.obj: ../MPU6050.h
 ../HAL_I2C.h:
 
 ../MPU6050.h:
+
+/Applications/ti/ccs1250/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/stdlib.h:
+
+/Applications/ti/ccs1250/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/time.h:
+
+/Applications/ti/ccs1250/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/abi_prefix.h:
+
+/Applications/ti/ccs1250/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/xlocale/_time.h:
 
