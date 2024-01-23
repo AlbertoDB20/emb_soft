@@ -7,164 +7,15 @@
 #include <stdint.h>
 #include "HAL_I2C.h"
 #include "MPU6050.h"
+#include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
+
 
 // Graphic library context
 Graphics_Context g_sContext;
 double xAcc, yAcc, zAcc, temp;
 int id;
-
-// _________________________________________________________________________________________________
-
-// this part is added just for test, NON ALREADY TRIED IN HARDWARE BUT WORKS IN C COMPLER AS I WANT
-
-
-// PSEUDO_CODE: acquire_window --> compute_class --> reaction_to_class
-// THIS PART SHOULD BE HARDWARE INDEPENDENT --> USER USES THESE FUNCTIONS TO OBTAIN ACC VALUES.
-
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <time.h>
-
-#define ACCEL_WINDOW_SIZE 10
-#define THREASHOLD -2.0
-#define ACC_MIN -4.5
-#define ACC_MAX 1.0
-
-/*
-    TEST SCAFFOLD for accelerometer Hardware Independent Part
-*/
-
-typedef struct {
-    double x;
-    double y;
-    double z;
-}threeAxis_t;
-
-typedef enum {
-    CLASS_MOVING,
-    CLASS_LOW_AMBIENT_LIGHT,
-    CLASS_INIT,
-    CLASS_BRAKING
-}class_t;
-
-typedef threeAxis_t accelReading;
-typedef accelReading accelWindow[ACCEL_WINDOW_SIZE];
-
-typedef struct {
-    accelWindow window;
-    class_t class;
-    float averageAcc;
-}model_t;
-
-
-float randomNum(float min, float max) {
-    int randInt = rand();
-    float randFloat = min + ((float)randInt / RAND_MAX) * (max - min);
-    return randFloat;
-}
-
-float readAccelX(){
-    return randomNum(ACC_MIN, ACC_MAX);
-}
-
-float readAccelY(){
-    return randomNum(ACC_MIN, ACC_MAX);
-}
-
-float readAccelZ(){
-    return randomNum(ACC_MIN, ACC_MAX);
-}
-
-void accel_sample(accelReading* result){
-    result->x = readAccelX();
-    result->y = readAccelY();
-    result->z = readAccelZ();
-}
-
-void acquire_window(model_t* model){
-    accelReading sample;
-    unsigned samplesInWindow = 0;
-
-    while(samplesInWindow < ACCEL_WINDOW_SIZE){
-        accel_sample(&sample);
-        model->window[samplesInWindow++] = sample;
-    }
-}
-
-void compute(model_t* model){
-    float sum_acc_x = 0.0;
-    for(int i=0; i<ACCEL_WINDOW_SIZE; i++){
-        sum_acc_x += model->window[i].x;
-    }
-    model->averageAcc = (float) sum_acc_x / ACCEL_WINDOW_SIZE;
-    // establish model class
-    if(model->averageAcc <= THREASHOLD){
-        model->class = CLASS_BRAKING;
-    }else{
-        model->class = CLASS_MOVING;
-    }
-}
-
-void light_management(const class_t class){
-    switch(class){
-        case CLASS_BRAKING:
-            printf("\nLIGHT == FLASH!!");
-            //rear_light_flash();
-            break;
-        case CLASS_INIT:
-            // init_funct();
-            printf("\nLIGHT == LOW");
-            break;
-        case CLASS_LOW_AMBIENT_LIGHT:
-            printf("\nLIGHT == HIGH");
-            //rear_light_on();
-            //front_light_on();
-            break;
-        case CLASS_MOVING:
-            printf("\nLIGHT == LOW");
-            //no_light_on();
-            break;
-        default:
-            break;
-    }
-}
-
-void print_model(const model_t* model){
-    printf("\naccX:");
-    for(int i=0; i<ACCEL_WINDOW_SIZE; i++){
-        printf("\t%0.3f", model->window[i].x);
-    }
-    printf("\nACC_WINDOW:  %0.3f", model->averageAcc);
-    printf("\nClass:  %u", model->class);
-}
-
-
-
-int main(){
-    srand(time(NULL));
-    model_t model;
-
-    while(1){
-        printf("\n---------------------------------------------------------------------------------------------------------------");
-        acquire_window(&model);
-        compute(&model);
-        print_model(&model);
-        light_management(model.class);
-        printf("\n---------------------------------------------------------------------------------------------------------------\n\n");
-        fflush(stdout);
-        sleep(5);
-    }
-    return 0;
-}
-
-
-
-
-//___________________________________________
-
 
 
 /* Timer_A Up Configuration Parameter */
@@ -286,14 +137,308 @@ void _hwInit()
 }
 
 
+// _________________________________________________________________________________________________
+
+// this part is added just for test, NON ALREADY TRIED IN HARDWARE BUT WORKS IN C COMPLER AS I WANT
+
+
+// PSEUDO_CODE: acquire_window --> compute_class --> reaction_to_class
+// THIS PART SHOULD BE HARDWARE INDEPENDENT --> USER USES THESE FUNCTIONS TO OBTAIN ACC VALUES.
+
+#define ACCEL_WINDOW_SIZE 10
+#define ACC_THREASHOLD -2.0
+#define LIGHT_THREASHOLD 100            // TODO: DEFINE IT WITH REAL VALUE
+#define ACC_MIN -4.5
+#define ACC_MAX 1.0
+#define T_MIN -20
+#define T_MAX 60
+
+#define SIMULATE_HARDWARE
+
+/*
+    TEST SCAFFOLD for accelerometer Hardware Independent Part
+*/
+
+typedef struct {
+    double x;
+    double y;
+    double z;
+}threeAxis_t;
+
+typedef enum {
+    CLASS_ERROR,                    // Sensor temperature exceed MAX Temperature
+    CLASS_BRAKING,                  // BSS active, so flash!
+    CLASS_MOVING,                   // normal functionality, light off. 
+    CLASS_LOW_AMBIENT_LIGHT,        // normal functionality, light on.
+}class_t;
+
+typedef threeAxis_t accelReading;
+typedef accelReading accelWindow[ACCEL_WINDOW_SIZE];
+
+typedef struct {
+    accelWindow window;
+    class_t class;
+    float averageAcc;
+    double temp;
+    double light;
+}model_t;
+
+
+float randomNum(float min, float max) {
+    int randInt = rand();
+    float randFloat = min + ((float)randInt / RAND_MAX) * (max - min);
+    return randFloat;
+}
+
+float readAccelX(){
+    return randomNum(ACC_MIN, ACC_MAX);
+}
+
+float readAccelY(){
+    return randomNum(ACC_MIN, ACC_MAX);
+}
+
+float readAccelZ(){
+    return randomNum(ACC_MIN, ACC_MAX);
+}
+
+double rand_temp(){
+    return randomNum(15, 30);
+}
+
+double rand_light(){
+    return randomNum(-1, 1);
+}
+
+double read_light_value(){
+    // TODO: this function is implemented by Sofia
+    return randomNum(-1, 1);
+}
+
+void accel_sample(accelReading* result){
+    #ifdef SIMULATE_HARDWARE
+        result->x = readAccelX();
+        result->y = readAccelY();
+        result->z = readAccelZ();
+    #else
+        result->x = MPU6050_readXvalue();
+        result->y = MPU6050_readYvalue();
+        result->z = MPU6050_readZvalue();
+    #endif
+}
+
+void acquire_window(model_t* model){
+    accelReading sample;
+    unsigned samplesInWindow = 0;
+
+    while(samplesInWindow < ACCEL_WINDOW_SIZE){
+        accel_sample(&sample);
+        model->window[samplesInWindow++] = sample;
+    }
+}
+
+
+void compute(model_t* model){
+    float sum_acc_x = 0.0;
+    for(int i=0; i<ACCEL_WINDOW_SIZE; i++){
+        sum_acc_x += model->window[i].x;
+    }
+    model->averageAcc = (float) sum_acc_x / ACCEL_WINDOW_SIZE;      // save Average acceleration in model variable
+
+    #ifdef SIMULATE_HARDWARE
+        model->temp = rand_temp();
+        model->light = rand_light();
+    #else 
+        model->temp = MPU6050_readTemp_chip();  
+        model->light = read_light_value();
+    #endif  
+}
+
+
+void classify(model_t* model){                          // establish model class
+    if(model->temp >= T_MAX){
+        model->class = CLASS_ERROR;
+    }
+    else{                                               // Temperature ok: 
+        if(model->averageAcc <= ACC_THREASHOLD){            
+            model->class = CLASS_BRAKING;               
+        }
+        else{                                               // no braking:
+            if (model->light <= LIGHT_THREASHOLD){
+                model->class = CLASS_LOW_AMBIENT_LIGHT;
+            }
+            else{
+                model->class = CLASS_MOVING;
+            }
+        }
+    }
+}
+    
+
+void light_management(const class_t class){
+    switch(class){
+        case CLASS_BRAKING:
+            printf("\nLIGHT == FLASH!!");
+            //rear_light_flash();
+            break;
+        case CLASS_INIT:
+            // init_funct();
+            printf("\nLIGHT == LOW");
+            break;
+        case CLASS_LOW_AMBIENT_LIGHT:
+            printf("\nLIGHT == HIGH");
+            //rear_light_on();
+            //front_light_on();
+            break;
+        case CLASS_MOVING:
+            printf("\nLIGHT == LOW");
+            //no_light_on();
+            break;
+        default:
+            break;
+    }
+}
+
+void print_model(const model_t* model){
+    printf("\naccX:");
+    for(int i=0; i<ACCEL_WINDOW_SIZE; i++){
+        printf("\t%0.3f", model->window[i].x);
+    }
+    printf("\nACC_WINDOW:  %0.3f", model->averageAcc);
+    printf("\nClass:  %u", model->class);
+}
+
+
+
+int main(){
+    srand(time(NULL));
+    model_t model;
+    int counter = 0;
+
+    #ifdef SIMULATE_HARDWARE   
+        while(1){
+            printf("\n---------------------------------------------------------------------------------------------------------------");
+            acquire_window(&model);
+            compute(&model);
+            print_model(&model);
+            light_management(model.class);
+            printf("\n---------------------------------------------------------------------------------------------------------------\n\n");
+            fflush(stdout);
+            sleep(5);
+        }
+        return 0;
+        
+    #else
+
+        while (1){
+            acquire_window(&model);
+            compute(&model);
+            light_management(model.class);
+            
+            if TEST_SCAFFOLD {
+                printf("\n---------------------------------------------------------------------------------------------------------------");
+                print_model(&model);
+                printf("\n---------------------------------------------------------------------------------------------------------------\n\n");
+                fflush(stdout);
+            }
+
+            char string[24];
+            int len = 0;
+
+            id = MPU6050_readDeviceId();
+            xAcc = MPU6050_readXvalue();
+            yAcc = MPU6050_readYvalue();
+            zAcc = MPU6050_readZvalue();
+            temp = MPU6050_readTemp_chip();
+
+            len = sprintf(string, " MPU6050 I2C ");
+            Graphics_drawStringCentered(&g_sContext,
+                                            (int8_t *)string,
+                                            len,
+                                            64,
+                                            15,
+                                            OPAQUE_TEXT);
+
+            len = sprintf(string, "ID : %5d ", id);
+            Graphics_drawStringCentered(&g_sContext,
+                                            (int8_t *)string,
+                                            len,
+                                            64,
+                                            35,
+                                            OPAQUE_TEXT);
+
+            len = sprintf(string, " xAcc : %3.3f g   ", xAcc);
+            Graphics_drawStringCentered(&g_sContext,
+                                            (int8_t *)string,
+                                            len,
+                                            64,
+                                            50,
+                                            OPAQUE_TEXT);
+
+            len = sprintf(string, " yAcc : %3.3f g   ", yAcc);
+            Graphics_drawStringCentered(&g_sContext,
+                                            (int8_t *)string,
+                                            len,
+                                            64,
+                                            65,
+                                            OPAQUE_TEXT);
+
+            len = sprintf(string, " zAcc : %3.3f g   ", zAcc);
+            Graphics_drawStringCentered(&g_sContext,
+                                            (int8_t *)string,
+                                            len,                         // 8 bits of string + 16 bits of acc
+                                            64,
+                                            80,
+                                            OPAQUE_TEXT);
+
+            sprintf(string, " temp : %3.3f ^C   ", temp);
+            Graphics_drawStringCentered(&g_sContext,
+                                            (int8_t *)string,
+                                            len,
+                                            64,
+                                            95,
+                                            OPAQUE_TEXT);
+
+            sprintf(string, " counter : %d", counter);
+                    Graphics_drawStringCentered(&g_sContext,
+                                                    (int8_t *)string,
+                                                    len,
+                                                    64,
+                                                    110,
+                                                    OPAQUE_TEXT);
+
+            ++counter;
+            __delay_cycles(10000);
+        }
+
+    #endif
+}
+
+
+//___________________________________________
+
+
 void main(void)
 {
+    srand(time(NULL));
+    model_t model;
     _hwInit();
 
     int counter = 0;
 
     while (1)
     {
+        acquire_window(&model);
+        compute(&model);
+        light_management(model.class);
+        
+        if TEST_SCAFFOLD {
+            printf("\n---------------------------------------------------------------------------------------------------------------");
+            print_model(&model);
+            printf("\n---------------------------------------------------------------------------------------------------------------\n\n");
+            fflush(stdout);
+        }
+
         char string[24];
         int len = 0;
 
@@ -363,4 +508,3 @@ void main(void)
         __delay_cycles(10000);
     }
 }
-
