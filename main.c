@@ -1,8 +1,10 @@
+/*
 #include <ti/devices/msp432p4xx/inc/msp.h>
 #include <ti/devices/msp432p4xx/driverlib/driverlib.h>
 #include <ti/grlib/grlib.h>
 #include "LcdDriver/Crystalfontz128x128_ST7735.h"
 #include "LcdDriver/HAL_MSP_EXP432P401R_Crystalfontz128x128_ST7735.h"
+*/
 #include <stdio.h>
 #include <stdint.h>
 #include "HAL_I2C.h"
@@ -13,12 +15,13 @@
 
 
 // Graphic library context
-Graphics_Context g_sContext;
+//Graphics_Context g_sContext;
 double xAcc, yAcc, zAcc, temp;
 int id;
 
+/*
 
-/* Timer_A Up Configuration Parameter */
+// Timer_A Up Configuration Parameter
 const Timer_A_UpModeConfig upConfig = {
 TIMER_A_CLOCKSOURCE_SMCLK,                      // SMCLK = 3 MhZ
         TIMER_A_CLOCKSOURCE_DIVIDER_12,         // SMCLK/12 = 250 KhZ
@@ -28,9 +31,9 @@ TIMER_A_CLOCKSOURCE_SMCLK,                      // SMCLK = 3 MhZ
         TIMER_A_DO_CLEAR                        // Clear value
         };
 
-/* Timer_A Compare Configuration Parameter  (PWM)
- * Playing with the Duty Cycle, we modify the frequency, so the sound of the buzzer.
- * */
+// Timer_A Compare Configuration Parameter  (PWM)
+//  Playing with the Duty Cycle, we modify the frequency, so the sound of the buzzer.
+
 Timer_A_CompareModeConfig compareConfig_PWM = {
         TIMER_A_CAPTURECOMPARE_REGISTER_4,          // Use CCR3
         TIMER_A_CAPTURECOMPARE_INTERRUPT_DISABLE,   // Disable CCR interrupt
@@ -41,42 +44,42 @@ Timer_A_CompareModeConfig compareConfig_PWM = {
 
 void _buzzerInit()
 {
-    /* Configures P2.7 to PM_TA0.4 for using Timer PWM to control the buzzer */
+    // Configures P2.7 to PM_TA0.4 for using Timer PWM to control the buzzer
     GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P2, GPIO_PIN7, GPIO_PRIMARY_MODULE_FUNCTION);          // pin operate in PWM mode
 
-    /* Configuring Timer_A0 for Up Mode and starting */
+    // Configuring Timer_A0 for Up Mode and starting 
     Timer_A_configureUpMode(TIMER_A0_BASE, &upConfig);
     Timer_A_startCounter(TIMER_A0_BASE, TIMER_A_UP_MODE);
 
-    /* Initialize compare registers to generate PWM */
+    // Initialize compare registers to generate PWM 
     Timer_A_initCompare(TIMER_A0_BASE, &compareConfig_PWM); // For P2.7
 }
 
 void _buzzerUp()
 {
-    /* Configures P2.7 to PM_TA0.4 for using Timer PWM to control the buzzer */
+    // Configures P2.7 to PM_TA0.4 for using Timer PWM to control the buzzer
     GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P2, GPIO_PIN7, GPIO_PRIMARY_MODULE_FUNCTION);          // pin operate in PWM mode
 
     Timer_A_setCompareValue(TIMER_A0_BASE, &compareConfig_PWM, 300);
 
-    /* Configuring Timer_A0 for Up Mode and starting */
+    // Configuring Timer_A0 for Up Mode and starting
     Timer_A_configureUpMode(TIMER_A0_BASE, &upConfig);
     Timer_A_startCounter(TIMER_A0_BASE, TIMER_A_UP_MODE);
 
-    /* Initialize compare registers to generate PWM */
+    // Initialize compare registers to generate PWM 
     Timer_A_initCompare(TIMER_A0_BASE, &compareConfig_PWM); // For P2.7
 }
 
 
 void _graphicsInit()
 {
-    /* Initializes display */
+    // Initializes display
     Crystalfontz128x128_Init();
 
-    /* Set default screen orientation */
+    // Set default screen orientation
     Crystalfontz128x128_SetOrientation(LCD_ORIENTATION_UP);
 
-    /* Initializes graphics context */
+    // Initializes graphics context
     Graphics_initContext(&g_sContext, &g_sCrystalfontz128x128,
                          &g_sCrystalfontz128x128_funcs);
     Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_RED);
@@ -110,18 +113,18 @@ void _ledInit(){
 
 void _hwInit()
 {
-    /* Halting WDT and disabling master interrupts */
+    // Halting WDT and disabling master interrupts
     WDT_A_holdTimer();
     Interrupt_disableMaster();
 
-    /* Set the core voltage level to VCORE1 */
+    // Set the core voltage level to VCORE1
     PCM_setCoreVoltageLevel(PCM_VCORE1);
 
-    /* Set 2 flash wait states for Flash bank 0 and 1*/
+    // Set 2 flash wait states for Flash bank 0 and 1
     FlashCtl_setWaitState(FLASH_BANK0, 2);
     FlashCtl_setWaitState(FLASH_BANK1, 2);
 
-    /* Initializes Clock System */
+    // Initializes Clock System
     CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
     CS_initClockSignal(CS_MCLK, CS_DCOCLK_SELECT, CS_CLOCK_DIVIDER_1);
     CS_initClockSignal(CS_HSMCLK, CS_DCOCLK_SELECT, CS_CLOCK_DIVIDER_1);
@@ -137,6 +140,10 @@ void _hwInit()
 }
 
 
+*/
+
+
+
 // _________________________________________________________________________________________________
 
 // this part is added just for test, NON ALREADY TRIED IN HARDWARE BUT WORKS IN C COMPLER AS I WANT
@@ -147,7 +154,7 @@ void _hwInit()
 
 #define ACCEL_WINDOW_SIZE 10
 #define ACC_THREASHOLD -2.0
-#define LIGHT_THREASHOLD 100            // TODO: DEFINE IT WITH REAL VALUE
+#define LIGHT_THREASHOLD 40            // TODO: DEFINE IT WITH REAL VALUE --> 40 stands for 40% of light
 #define ACC_MIN -4.5
 #define ACC_MAX 1.0
 #define T_MIN -20
@@ -183,6 +190,20 @@ typedef struct {
     double light;
 }model_t;
 
+const char* get_class_name(class_t class_enum) {
+    switch (class_enum) {
+        case CLASS_ERROR:
+            return "CLASS_ERROR";
+        case CLASS_BRAKING:
+            return "CLASS_BRAKING";
+        case CLASS_MOVING:
+            return "CLASS_MOVING";
+        case CLASS_LOW_AMBIENT_LIGHT:
+            return "CLASS_LOW_AMBIENT_LIGHT";
+        default:
+            return "Unknown Class";
+    }
+}
 
 float randomNum(float min, float max) {
     int randInt = rand();
@@ -203,44 +224,43 @@ float readAccelZ(){
 }
 
 double rand_temp(){
-    return randomNum(15, 30);
+    return randomNum(20, 65);
 }
 
 double rand_light(){
-    return randomNum(-1, 1);
+    return randomNum(0, 100);
 }
 
 double read_light_value(){
     // TODO: this function is implemented by Sofia
-    return randomNum(-1, 1);
+    return randomNum(0, 100);
 }
 
-void accel_sample(accelReading* result){
-    #ifdef SIMULATE_HARDWARE
-        result->x = readAccelX();
-        result->y = readAccelY();
-        result->z = readAccelZ();
+void accel_sample(accelReading* result){            // This function read accelerations along x, y, z axis and save it in result, that is a structured variable defined before. 
+    #ifdef SIMULATE_HARDWARE                            
+        result->x = readAccelX();                       // read random - HID x acceleration  ----- 
+        result->y = readAccelY();                       // read random - HID y acceleration       |--->  TEST SCAFFOLD
+        result->z = readAccelZ();                       // read random - HID z acceleration  -----
     #else
-        result->x = MPU6050_readXvalue();
-        result->y = MPU6050_readYvalue();
-        result->z = MPU6050_readZvalue();
+        result->x = MPU6050_readXvalue();               // read x acceleration from MPU6050 sensor
+        result->y = MPU6050_readYvalue();               // read y acceleration from MPU6050 sensor
+        result->z = MPU6050_readZvalue();               // read z acceleration from MPU6050 sensor
     #endif
 }
 
 void acquire_window(model_t* model){
-    accelReading sample;
-    unsigned samplesInWindow = 0;
+    accelReading sample;                                // Istantiate an empty sample
+    unsigned samplesInWindow = 0;                       // index for iterate sample on window array
 
-    while(samplesInWindow < ACCEL_WINDOW_SIZE){
-        accel_sample(&sample);
-        model->window[samplesInWindow++] = sample;
-    }
+    while(samplesInWindow < ACCEL_WINDOW_SIZE){         // Fill window array with ACCEL_WINDOW_SIZE sample element
+        accel_sample(&sample);                          // Save in sample values read from sensor
+        model->window[samplesInWindow++] = sample;      // Store element in index given, and increment it
+    }  
 }
 
-
 void compute(model_t* model){
-    float sum_acc_x = 0.0;
-    for(int i=0; i<ACCEL_WINDOW_SIZE; i++){
+    float sum_acc_x = 0.0;                              // partial sum of x acceleration (initiated to zero)
+    for(int i=0; i<ACCEL_WINDOW_SIZE; i++){             // compute sum of all x acceleration in window array
         sum_acc_x += model->window[i].x;
     }
     model->averageAcc = (float) sum_acc_x / ACCEL_WINDOW_SIZE;      // save Average acceleration in model variable
@@ -275,61 +295,96 @@ void classify(model_t* model){                          // establish model class
 }
     
 
-void light_management(const class_t class){
-    switch(class){
-        case CLASS_BRAKING:
-            printf("\nLIGHT == FLASH!!");
-            //rear_light_flash();
-            break;
-        case CLASS_INIT:
-            // init_funct();
-            printf("\nLIGHT == LOW");
-            break;
-        case CLASS_LOW_AMBIENT_LIGHT:
-            printf("\nLIGHT == HIGH");
-            //rear_light_on();
-            //front_light_on();
-            break;
-        case CLASS_MOVING:
-            printf("\nLIGHT == LOW");
-            //no_light_on();
-            break;
-        default:
-            break;
-    }
+void execute(const class_t class){
+    #ifdef SIMULATE_HARDWARE
+        fflush(stdout);
+        switch(class){
+            case CLASS_ERROR:
+                printf("\t\t |\n\t\t ------> ");
+                printf(" BUZZER: flash, REAR LIGHT: flash, FRONT LIGHT: flash, LCD SCREEN: error_page");
+                break;
+            case CLASS_BRAKING:
+                printf("\t\t |\n\t\t ------> ");
+                printf(" BUZZER: low, REAR LIGHT: flash, FRONT LIGHT: -, LCD SCREEN: None");
+                break;
+            case CLASS_LOW_AMBIENT_LIGHT:
+                printf("\t\t |\n\t\t ------> ");
+                printf(" BUZZER: low, REAR LIGHT: High, FRONT LIGHT: high, LCD SCREEN: None");
+                break;
+            case CLASS_MOVING:
+                printf("\t\t |\n\t\t ------> ");
+                printf(" BUZZER: low, REAR LIGHT: low, FRONT LIGHT: low, LCD SCREEN: None");
+                break;
+            default:
+                break;
+        }
+        fflush(stdout);
+
+    #else 
+
+        switch(class){
+            case CLASS_ERROR:
+                // init_funct();
+                break;
+            case CLASS_BRAKING:
+                //rear_light_flash();
+                break;
+            
+            case CLASS_LOW_AMBIENT_LIGHT:
+                //rear_light_on();
+                //front_light_on();
+                break;
+            case CLASS_MOVING:
+                //no_light_on();
+                break;
+            default:
+                break;
+        }
+    #endif
 }
 
 void print_model(const model_t* model){
-    printf("\naccX:");
+    printf("\n\n\n\n---------------------------------------------------------------------------------------------------------------");
+    printf("\n Acc X:     [ ");
     for(int i=0; i<ACCEL_WINDOW_SIZE; i++){
-        printf("\t%0.3f", model->window[i].x);
+        if(i == ACCEL_WINDOW_SIZE-1){
+            printf("%0.3f ]", model->window[i].x);
+        }else{
+            printf("%0.3f", model->window[i].x);
+            printf(",  ");
+        }
+        
     }
-    printf("\nACC_WINDOW:  %0.3f", model->averageAcc);
-    printf("\nClass:  %u", model->class);
+    printf("\n Average Acceleration:  %0.3f", model->averageAcc);
+    printf("\n Temperature:  %f", model->temp);
+    printf("\n Light:  %f", model->light); 
+    printf("\n Class: %s", get_class_name(model->class));
+    printf("\n---------------------------------------------------------------------------------------------------------------\n");
+    fflush(stdout);
 }
 
 
 
 int main(){
+    fflush(stdout);
     srand(time(NULL));
     model_t model;
-    int counter = 0;
 
     #ifdef SIMULATE_HARDWARE   
+        
         while(1){
-            printf("\n---------------------------------------------------------------------------------------------------------------");
             acquire_window(&model);
             compute(&model);
+            classify(&model);
             print_model(&model);
-            light_management(model.class);
-            printf("\n---------------------------------------------------------------------------------------------------------------\n\n");
-            fflush(stdout);
+            execute(model.class);
             sleep(5);
         }
         return 0;
-        
-    #else
 
+    #else
+        
+        int counter = 0;
         while (1){
             acquire_window(&model);
             compute(&model);
@@ -415,8 +470,7 @@ int main(){
 }
 
 
-//___________________________________________
-
+/*
 
 void main(void)
 {
@@ -508,3 +562,5 @@ void main(void)
         __delay_cycles(10000);
     }
 }
+
+*/
